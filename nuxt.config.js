@@ -1,6 +1,7 @@
 const path = require('path')
 const glob = require('glob-all')
 const PurgecssPlugin = require('purgecss-webpack-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 
 module.exports = {
   /*
@@ -22,6 +23,12 @@ module.exports = {
   */
   loading: { color: '#3B8070' },
   /*
+  ** Additional modules
+  */
+  modules: [
+    ['nuxt-sass-resources-loader', '@/assets/styles/global.scss']
+  ],
+  /*
   ** Build configuration
   */
   build: {
@@ -42,7 +49,20 @@ module.exports = {
               path.join(__dirname, './layouts/**/*.vue'),
               path.join(__dirname, './components/**/*.vue')
             ]),
-            whitelist: ['html', 'body']
+            whitelistPatterns: [
+              /js-.*/,
+              /.*-enter.*/,
+              /.*-leave.*/
+            ]
+          })
+        )
+        config.plugins.push(
+          new CompressionPlugin({
+            asset: '[path].gz[query]',
+            algorithm: 'gzip',
+            test: /\.js$|\.css$|\.html$/,
+            threshold: 10240,
+            minRatio: 0.8
           })
         )
         config.module.rules.push({
@@ -99,25 +119,12 @@ module.exports = {
               }
             }
           ]
-        },
-        {
-          test: /\.less$/,
-          use: [
-            'vue-style-loader',
-            'css-loader',
-            'less-loader'
-          ]
-        },
-        {
-          test: /\.pug$/,
-          loader: 'pug-plain-loader'
         }
       )
     },
     postcss: [
       require('postcss-responsive-type')(),
-      require('autoprefixer')(),
-      require('css-mqpacker')()
+      require('autoprefixer')()
     ],
     extractCSS: {
       allChunks: true
